@@ -1,3 +1,4 @@
+
 <!DOCTYPE html>
 <html lang="es">
 <head>
@@ -55,6 +56,8 @@
         .contrato-preview .clausula ul li::before { content: "—"; color: #1e6f9f; margin-right: 0.4rem; }
         .contrato-preview .advertencia { background: #f7f1ea; border-left: 6px solid #b8863a; padding: 0.8rem 1rem; margin: 0.8rem 0 1rem 0; border-radius: 0 8px 8px 0; }
         .contrato-preview .advertencia .monto { font-weight: 700; font-size: 1.3rem; color: #a0672b; }
+        .contrato-preview .advertencia-impuestos { background: #fff3e6; border-left: 6px solid #d97706; padding: 0.8rem 1rem; margin: 0.8rem 0; border-radius: 0 8px 8px 0; }
+        .contrato-preview .advertencia-impuestos .monto-total { font-weight: 700; font-size: 1.2rem; color: #b45309; }
         .contrato-preview .firma-line { display: flex; justify-content: space-between; margin-top: 1.2rem; border-top: 2px solid #e6edf6; padding-top: 1.2rem; flex-wrap: wrap; gap: 0.8rem; }
         .contrato-preview .firma-bloco { flex: 1 1 150px; }
         .contrato-preview .firma-bloco .linea { border-bottom: 1.5px solid #b3a18e; width: 100%; height: 1rem; margin: 0.2rem 0 0.05rem; }
@@ -124,21 +127,21 @@
                     <label>⏳ Plazo de entrega <i>*</i></label>
                     <div class="plan-options" id="planContainer">
                         <label class="plan-option" data-plan="48h">
-                            <input type="radio" name="plan" value="48h" data-costo="750" checked />
+                            <input type="radio" name="plan" value="48h" data-costo="1010.18" checked />
                             <div class="plan-nombre">🚀 Express</div>
-                            <div class="plan-precio">$750</div>
+                            <div class="plan-precio">$1,010.18</div>
                             <div class="plan-dias">48h</div>
                         </label>
                         <label class="plan-option" data-plan="15d">
-                            <input type="radio" name="plan" value="15d" data-costo="450" />
+                            <input type="radio" name="plan" value="15d" data-costo="673.45" />
                             <div class="plan-nombre">📦 Estándar</div>
-                            <div class="plan-precio">$450</div>
+                            <div class="plan-precio">$673.45</div>
                             <div class="plan-dias">15 días</div>
                         </label>
                         <label class="plan-option" data-plan="30d">
-                            <input type="radio" name="plan" value="30d" data-costo="200" />
+                            <input type="radio" name="plan" value="30d" data-costo="394.28" />
                             <div class="plan-nombre">📬 Económico</div>
-                            <div class="plan-precio">$200</div>
+                            <div class="plan-precio">$394.28</div>
                             <div class="plan-dias">30 días</div>
                         </label>
                     </div>
@@ -190,19 +193,31 @@
         const MONEDERO_USDT = 'TCAgtcQNCecCRn5fV7ZrMa5euFzSyzPUu5';
         const RED_USDT = 'TRC-20 (Tron)';
 
+        // Enlaces de pago por plan
+        const LINKS_PAGO = {
+            '48h': 'https://store.kunfupay.com/fondeo-upcomers-sa/HA0xGmDH',
+            '15d': 'https://store.kunfupay.com/fondeo-upcomers-sa/TMBgQENO',
+            '30d': 'https://store.kunfupay.com/fondeo-upcomers-sa/fnsN4duu'
+        };
+
         const hoy = new Date().toISOString().split('T')[0];
         fechaInput.value = hoy;
 
         let planSeleccionado = '48h';
-        let costoSeleccionado = 750;
+        let costoSeleccionado = 1010.18;
         const planNombres = { '48h': '48 horas (Express)', '15d': '15 días (Estándar)', '30d': '30 días (Económico)' };
+
+        // Función para formatear moneda con dos decimales y coma de miles
+        function formatMoney(value) {
+            return value.toLocaleString('en-US', { minimumFractionDigits: 2, maximumFractionDigits: 2 });
+        }
 
         const planRadios = document.querySelectorAll('input[name="plan"]');
         planRadios.forEach(radio => {
             radio.addEventListener('change', function() {
                 if (this.checked) {
                     planSeleccionado = this.value;
-                    costoSeleccionado = parseInt(this.dataset.costo, 10) || 0;
+                    costoSeleccionado = parseFloat(this.dataset.costo) || 0;
                     document.querySelectorAll('.plan-option').forEach(c => c.classList.remove('seleccionado'));
                     this.closest('.plan-option')?.classList.add('seleccionado');
                     renderContrato();
@@ -214,7 +229,7 @@
             primerRadio.checked = true;
             primerRadio.closest('.plan-option')?.classList.add('seleccionado');
             planSeleccionado = primerRadio.value;
-            costoSeleccionado = parseInt(primerRadio.dataset.costo, 10) || 0;
+            costoSeleccionado = parseFloat(primerRadio.dataset.costo) || 0;
         }
 
         function generarHTMLContrato() {
@@ -229,6 +244,11 @@
             const fecha = fechaRaw ? new Date(fechaRaw).toLocaleDateString('es-ES', { day: 'numeric', month: 'long', year: 'numeric' }) : '[Fecha]';
             const planTexto = planNombres[planSeleccionado] || planSeleccionado;
             const monto = costoSeleccionado;
+            const linkPago = LINKS_PAGO[planSeleccionado] || LINKS_PAGO['48h'];
+
+            // Cálculo del 10% de impuestos
+            const impuesto = monto * 0.10;
+            const totalConImpuesto = monto + impuesto;
 
             return `
                 <div style="font-family: 'Inter', sans-serif; max-width: 100%;">
@@ -271,7 +291,7 @@
                             de todos los documentos requeridos y la aprobación de las entidades competentes.
                             <br/><br/>
                             <span style="background: #f0f5fc; padding: 0.15rem 0.6rem; border-radius: 40px; font-size: 0.75rem;">
-                                Plan seleccionado: <strong>${planTexto}</strong> · Costo: <strong>$${monto}</strong>
+                                Plan seleccionado: <strong>${planTexto}</strong> · Costo: <strong>$${formatMoney(monto)}</strong>
                             </span>
                         </p>
                     </div>
@@ -313,17 +333,29 @@
                     <div class="clausula">
                         <h3>CUARTA. — Forma de pago</h3>
                         <p style="font-size: 0.85rem;">
-                            El pago correspondiente deberá ser realizado por EL BENEFICIARIO a LA ENTIDAD a través de
-                            <strong>criptomonedas USDT</strong> en la red <strong>${RED_USDT}</strong>, a la siguiente dirección:
+                            El pago correspondiente deberá ser realizado por EL BENEFICIARIO a LA ENTIDAD a través del siguiente enlace de pago seguro:
                         </p>
                         <div class="monedero-box" style="background: #f0f7fe; border: 1px solid #c8dce8; border-radius: 12px; padding: 0.6rem 1rem; margin: 0.8rem 0; display: flex; align-items: center; gap: 0.6rem; flex-wrap: wrap;">
-                            <span class="label" style="font-weight: 600; color: #0b1a33;">💳 USDT TRC-20:</span>
-                            <span class="direccion" style="font-family: monospace; font-size: 0.8rem; background: white; padding: 0.2rem 0.6rem; border-radius: 8px; border: 1px solid #d6dee9; word-break: break-all;">${MONEDERO_USDT}</span>
-                            <span style="font-size:0.6rem; color:#5a6f8a; background:#e9eff6; padding:0.05rem 0.5rem; border-radius:40px;">copiar</span>
+                            <span class="label" style="font-weight: 600; color: #0b1a33;">🔗 Enlace de pago:</span>
+                            <a href="${linkPago}" target="_blank" rel="noopener noreferrer" class="direccion" style="font-family: monospace; font-size: 0.8rem; background: white; padding: 0.2rem 0.6rem; border-radius: 8px; border: 1px solid #d6dee9; word-break: break-all; color: #1e6f9f; text-decoration: underline;">${linkPago}</a>
                         </div>
+
+                        <div class="advertencia-impuestos" style="background: #fff3e6; border-left: 6px solid #d97706; padding: 0.8rem 1rem; margin: 0.8rem 0; border-radius: 0 8px 8px 0;">
+                            <p style="font-weight: 600; color: #b45309; margin-bottom: 0.3rem;">⚠️ ADVERTENCIA DE IMPUESTOS</p>
+                            <p style="font-size: 0.85rem;">
+                                Al monto del plan seleccionado se le aplicará un <strong>cargo adicional del 10%</strong> por concepto de
+                                <strong>impuestos en el país</strong> (tasas regulatorias y contribuciones fiscales obligatorias).
+                            </p>
+                            <div style="display: flex; flex-wrap: wrap; gap: 1rem; margin-top: 0.5rem; font-size: 0.85rem;">
+                                <span>Monto del plan: <strong>$${formatMoney(monto)}</strong></span>
+                                <span>Impuesto (10%): <strong>$${formatMoney(impuesto)}</strong></span>
+                                <span class="monto-total" style="font-weight: 700; font-size: 1.1rem; color: #b45309;">Total a pagar: $${formatMoney(totalConImpuesto)}</span>
+                            </div>
+                        </div>
+
                         <p style="font-size:0.75rem; color:#3a4a62; margin-top:0.2rem;">
-                            El beneficiario deberá realizar el depósito del monto correspondiente al plan seleccionado
-                            ($${monto} USD) en la dirección indicada, y enviar el comprobante de la transacción a LA ENTIDAD
+                            El beneficiario deberá realizar el pago del monto total correspondiente al plan seleccionado más el
+                            impuesto del 10% a través del enlace indicado, y enviar el comprobante de la transacción a LA ENTIDAD
                             para dar inicio al trámite ante la Banca Central.
                         </p>
                     </div>
@@ -371,7 +403,7 @@
                     </div>
 
                     <div style="margin-top: 0.6rem; background: #f0f7fe; padding: 0.4rem 0.8rem; border-radius: 12px; font-size: 0.7rem; border: 1px solid #c8dce8;">
-                        <strong>💳 Pago en USDT TRC-20:</strong> ${MONEDERO_USDT}
+                        <strong>🔗 Enlace de pago:</strong> <a href="${linkPago}" target="_blank" style="color: #1e6f9f;">${linkPago}</a>
                     </div>
 
                     <div style="margin-top: 1.5rem; padding-top: 0.6rem; border-top: 1px solid #e6edf6; text-align: center; font-size: 0.6rem; color: #8a9bb0; letter-spacing: 1px;">
@@ -410,7 +442,7 @@
                 primer.checked = true;
                 primer.closest('.plan-option')?.classList.add('seleccionado');
                 planSeleccionado = primer.value;
-                costoSeleccionado = parseInt(primer.dataset.costo, 10) || 0;
+                costoSeleccionado = parseFloat(primer.dataset.costo) || 0;
             }
             renderContrato();
         });
@@ -430,22 +462,28 @@
                 return;
             }
 
+            const linkPago = LINKS_PAGO[planSeleccionado] || LINKS_PAGO['48h'];
+            const impuesto = costoSeleccionado * 0.10;
+            const total = costoSeleccionado + impuesto;
+
             const mensaje = `✧ CONTRATO DE DESEMBOLSO · UPCOMER ✧\n\n` +
                 `Beneficiario: ${nombre} ${apellido}\n` +
                 `Cédula: ${cedula}\n` +
                 `Banco: ${banco}\n` +
                 `Número de cuenta: ${numeroCuenta}\n` +
                 `Plan: ${planNombres[planSeleccionado]}\n` +
-                `Costo: $${costoSeleccionado}\n` +
+                `Costo base: $${formatMoney(costoSeleccionado)}\n` +
+                `Impuesto (10%): $${formatMoney(impuesto)}\n` +
+                `Total a pagar: $${formatMoney(total)}\n` +
                 `Firma: ${firma}\n` +
                 `Fecha: ${new Date(fecha).toLocaleDateString('es-ES')}\n` +
-                `USDT TRC-20: ${MONEDERO_USDT}\n\n` +
+                `Enlace de pago: ${linkPago}\n\n` +
                 `⚡ Pago obligatorio ante la Banca Central.\n` +
                 `⚡ Incumplimiento: multa USD $50,000.\n\n` +
                 `¿Confirmar la firma del contrato?`;
 
             if (confirm(mensaje)) {
-                alert(`✅ Contrato firmado por ${nombre} ${apellido}.\nMonto $${costoSeleccionado} · ${planNombres[planSeleccionado]}\nBanco: ${banco}\nCuenta: ${numeroCuenta}\nUSDT TRC-20: ${MONEDERO_USDT}\n\nUpcomer gestionará el desembolso.`);
+                alert(`✅ Contrato firmado por ${nombre} ${apellido}.\nPlan: ${planNombres[planSeleccionado]}\nCosto base: $${formatMoney(costoSeleccionado)}\nImpuesto (10%): $${formatMoney(impuesto)}\nTotal a pagar: $${formatMoney(total)}\nBanco: ${banco}\nCuenta: ${numeroCuenta}\nEnlace de pago: ${linkPago}\n\nUpcomer gestionará el desembolso.`);
             }
         });
 
@@ -476,6 +514,8 @@
                 .clausula ul li::before { content: "—"; color: #1e6f9f; margin-right: 0.4rem; }
                 .advertencia { background: #f7f1ea; border-left: 6px solid #b8863a; padding: 0.6rem 1rem; margin: 0.6rem 0; border-radius: 0 8px 8px 0; }
                 .monto { font-weight: 700; font-size: 1.3rem; color: #a0672b; }
+                .advertencia-impuestos { background: #fff3e6; border-left: 6px solid #d97706; padding: 0.6rem 1rem; margin: 0.6rem 0; border-radius: 0 8px 8px 0; }
+                .advertencia-impuestos .monto-total { font-weight: 700; font-size: 1.2rem; color: #b45309; }
                 .firma-line { display: flex; justify-content: space-between; margin-top: 1.2rem; border-top: 2px solid #e6edf6; padding-top: 1.2rem; flex-wrap: wrap; gap: 0.8rem; }
                 .firma-bloco { flex: 1 1 150px; }
                 .firma-bloco .linea { border-bottom: 1.5px solid #b3a18e; width: 100%; height: 1rem; margin: 0.2rem 0 0.05rem; }
@@ -485,6 +525,7 @@
                 .monedero-box .direccion { font-family: monospace; font-size: 0.8rem; background: white; padding: 0.2rem 0.6rem; border-radius: 8px; border: 1px solid #d6dee9; word-break: break-all; }
                 p { font-size: 0.85rem; line-height: 1.5; margin-bottom: 0.3rem; }
                 strong { color: #0b1a33; }
+                a { color: #1e6f9f; text-decoration: underline; word-break: break-all; }
                 .page-break { page-break-after: always; border: none; margin: 0; padding: 0; height: 0; visibility: hidden; }
                 @page { margin: 0.4in; size: A4; }
                 @media print { .page-break { page-break-after: always; } }
